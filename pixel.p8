@@ -4,148 +4,152 @@ __lua__
 
 
 function _init()
-    bullets = {}
-    enemies = {}
-    player = playerFactory(64, 64, 7);
+    game = makeGame()
 end
 
 function _update()
-    if (btn(0)) then player:moveLeft() end
-    if (btn(1)) then player:moveRight() end
-    if (btn(2)) then player:moveTop() end
-    if (btn(3)) then player:moveDown() end
+    if (btn(0)) then game.player:moveLeft() end
+    if (btn(1)) then game.player:moveRight() end
+    if (btn(2)) then game.player:moveTop() end
+    if (btn(3)) then game.player:moveDown() end
 
-    if(btnp(4)) then bulletFactory(player.x,player.y,player.direction,8) end
+    if(btnp(4)) then
+        add(game.bullets, bulletFactory(game.player.x,game.player.y,game.player.direction))
+    end
 
     if(btnp(5)) then
-        enemyFactory(10,10,12,player.x,player.y)
+        add(game.enemies, enemyFactory(10,10,12,game.player.x,game.player.y))
     end
 end
 
 function _draw()
  cls(0)
-
- drawPlayer(player)
- bulletCollitionCheck()
- bulletCleanUp()
- enemyCleanUp()
- moveBullets()
- moveEnemies()
-
- for b in all(bullets) do drawBullet(b) end
- for e in all(enemies) do drawEnemy(e) end
+ game:drawPlayer()
+ game:bulletCollitionCheck()
+ game:bulletCleanUp()
+ game:enemyCleanUp()
+ game:moveBullets()
+ game:moveEnemies()
+ game:drawBullets()
+ game:drawEnemies()
 end
 
 
 
-function moveBullets()
-    local i,j=1,1               --to properly support objects being deleted, can't use del() or deli()
-    while(bullets[i]) do           --if we used a for loop, adding new objects in object updates would break
-        if bullets[i]:update() then
-            if(i!=j) then
-                bullets[j]=bullets[i]
-                bullets[i]=nil --shift objects if necessary
-            end
-            j+=1
-        else
-            bullets[i]=nil
-        end
-        i+=1
-    end
-end
-
-function moveEnemies()
-    i=1
-    while (enemies[i]) do
-        enemies[i].tx=player.x
-        enemies[i].ty=player.y
-        enemies[i]:update()
-        i+=1
-    end
-end
-
-function bulletCollitionCheck()
-    for b in all(bullets) do
-        -- left
-        if b.direction==0 then
-            for i=b.x,b.x-b.speed,-1 do
-                e=findEnemyByPosition(i,b.y)
-                if e!=nil then
-                    b.hit=1
-                    e.hit=1
-                    break
+function makeGame()
+    game = {
+        totalKills=0,
+        state=0,
+        bullets = {},
+        enemies = {},
+        player = playerFactory(64, 64, 7),
+        drawPlayer=function(self)
+            pset(self.player.x,self.player.y,self.player.color)
+        end,
+        bulletCollitionCheck=function(self)
+            for b in all(self.bullets) do
+                -- left
+                if b.direction==0 then
+                    for i=b.x,b.x-b.speed,-1 do
+                        e=self:findEnemyByPosition(i,b.y)
+                        if e!=nil then
+                            b.hit=1
+                            e.hit=1
+                            self.totalKills+=1
+                            break
+                        end
+                    end
+                -- right
+                elseif b.direction==1 then
+                    for i=b.x,b.x+b.speed,1 do
+                        e=self:findEnemyByPosition(i,b.y)
+                        if e!=nil then
+                            b.hit=1
+                            e.hit=1
+                            self.totalKills+=1
+                            break
+                        end
+                    end
+                -- up
+                elseif b.direction==2 then
+                    for i=b.y,b.y-b.speed,-1 do
+                        e=self:findEnemyByPosition(b.x,i)
+                        if e!=nil then
+                            b.hit=1
+                            e.hit=1
+                            self.totalKills+=1
+                            break
+                        end
+                    end
+                -- down
+                elseif b.direction==3 then
+                    for i=b.y,b.y+b.speed,1 do
+                        e=self:findEnemyByPosition(b.x,i)
+                        if e!=nil then
+                            b.hit=1
+                            e.hit=1
+                            self.totalKills+=1
+                            break
+                        end
+                    end
                 end
             end
-        -- right
-        elseif b.direction==1 then
-            for i=b.x,b.x+b.speed,1 do
-                e=findEnemyByPosition(i,b.y)
-                if e!=nil then
-                    b.hit=1
-                    e.hit=1
-                    break
+        end,
+        findEnemyByPosition=function(self,x,y)
+            for e in all(self.enemies) do
+                if e.x==x and e.y==y then return e end
+            end
+
+            return nil
+        end,
+        bulletCleanUp=function(self)
+            for i=#self.bullets,1,-1 do
+                if self.bullets[i].hit==1 then deli(self.bullets,i) end
+            end
+        end,
+        enemyCleanUp=function(self)
+            for i=#self.enemies,1,-1 do
+                if self.enemies[i].hit==1 then
+                    pset(self.enemies[i].x,self.enemies[i].y,10)
+                    deli(self.enemies,i)
                 end
             end
-        -- up
-        elseif b.direction==2 then
-            for i=b.y,b.y-b.speed,-1 do
-                e=findEnemyByPosition(b.x,i)
-                if e!=nil then
-                    b.hit=1
-                    e.hit=1
-                    break
+        end,
+        moveBullets=function(self)
+            local i,j=1,1               --to properly support objects being deleted, can't use del() or deli()
+            while(self.bullets[i]) do           --if we used a for loop, adding new objects in object updates would break
+                if self.bullets[i]:update() then
+                    if(i!=j) then
+                        self.bullets[j]=self.bullets[i]
+                        self.bullets[i]=nil --shift objects if necessary
+                    end
+                    j+=1
+                else
+                    self.bullets[i]=nil
                 end
+                i+=1
             end
-        -- down
-        elseif b.direction==3 then
-            for i=b.y,b.y+b.speed,1 do
-                e=findEnemyByPosition(b.x,i)
-                if e!=nil then
-                    b.hit=1
-                    e.hit=1
-                    break
-                end
+        end,
+        moveEnemies=function(self)
+            i=1
+            while (self.enemies[i]) do
+                self.enemies[i].tx=self.player.x
+                self.enemies[i].ty=self.player.y
+                self.enemies[i]:update()
+                i+=1
             end
-        end
-    end
+        end,
+        drawBullets=function(self)
+            for b in all(self.bullets) do pset(b.x,b.y,b.color) end
+        end,
+        drawEnemies=function(self)
+            for e in all(self.enemies) do pset(e.x,e.y,e.color) end
+        end,
+    }
+
+    return game
 end
 
-function bulletCleanUp()
-    for i=#bullets,1,-1 do
-        if bullets[i].hit==1 then deli(bullets,i) end
-    end
-end
-
-function enemyCleanUp()
-    for i=#enemies,1,-1 do
-        if enemies[i].hit==1 then
-            pset(enemies[i].x,enemies[i].y,10)
-            deli(enemies,i)
-        end
-    end
-end
-
-function findEnemyByPosition(x, y)
-    for e in all(enemies) do
-        if e.x==x and e.y==y then return e end
-    end
-
-    return nil
-end
-
-function drawPlayer(p)
-    pset(p.x,p.y,p.color)
-    print(p.x, 0,0,7)
-    print(p.y, 0,20,7)
-end
-
-function drawBullet(b)
-    pset(b.x,b.y,b.color)
-end
-
-function drawEnemy(e)
-    pset(e.x,e.y,e.color)
-end
 
 function playerFactory(x, y, color)
     local player = {
@@ -179,7 +183,7 @@ function playerFactory(x, y, color)
     return player
 end
 
-function bulletFactory(x,y,direction,color)
+function bulletFactory(x,y,direction)
     local dx=0
     local dy=0
     local speed=5
@@ -195,7 +199,7 @@ function bulletFactory(x,y,direction,color)
     local b = {                 --only use the b table inside this function, it's "local" to it
     x=x,y=y,dx=dx,dy=dy,       --the x=x means let b.x = the value stored in newbullet()'s x variable
     time=60,                   --this is how long a bullet will last before disappearing
-    color=color,
+    color=8,
     direction=direction,
     hit=0,
     speed=speed,
@@ -207,7 +211,7 @@ function bulletFactory(x,y,direction,color)
         return self.time > 0
     end,
     }
-    add(bullets,b)                 --now we can manage all bullets in a list
+    -- add(bullets,b)                 --now we can manage all bullets in a list
     return b                    --and if some are special, we can adjust them a bit outside of this function
 end
 
@@ -227,20 +231,9 @@ function enemyFactory(x,y,color,tx,ty)
             end
         end,
     }
-    add(enemies, enemy)
 
     return enemy
-
 end
-
-
-
-
-
-
-
-
-
 
 
 __gfx__
