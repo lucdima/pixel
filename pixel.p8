@@ -36,6 +36,8 @@ function _draw()
  for e in all(enemies) do drawEnemy(e) end
 end
 
+
+
 function moveBullets()
     local i,j=1,1               --to properly support objects being deleted, can't use del() or deli()
     while(bullets[i]) do           --if we used a for loop, adding new objects in object updates would break
@@ -64,9 +66,40 @@ end
 
 function bulletCollitionCheck()
     for b in all(bullets) do
+        -- left
         if b.direction==0 then
             for i=b.x,b.x-b.speed,-1 do
                 e=findEnemyByPosition(i,b.y)
+                if e!=nil then
+                    b.hit=1
+                    e.hit=1
+                    break
+                end
+            end
+        -- right
+        elseif b.direction==1 then
+            for i=b.x,b.x+b.speed,1 do
+                e=findEnemyByPosition(i,b.y)
+                if e!=nil then
+                    b.hit=1
+                    e.hit=1
+                    break
+                end
+            end
+        -- up
+        elseif b.direction==2 then
+            for i=b.y,b.y-b.speed,-1 do
+                e=findEnemyByPosition(b.x,i)
+                if e!=nil then
+                    b.hit=1
+                    e.hit=1
+                    break
+                end
+            end
+        -- down
+        elseif b.direction==3 then
+            for i=b.y,b.y+b.speed,1 do
+                e=findEnemyByPosition(b.x,i)
                 if e!=nil then
                     b.hit=1
                     e.hit=1
