@@ -8,36 +8,68 @@ function _init()
 end
 
 function _update()
-    if (btn(0)) then game.player:moveLeft() end
-    if (btn(1)) then game.player:moveRight() end
-    if (btn(2)) then game.player:moveTop() end
-    if (btn(3)) then game.player:moveDown() end
+    -- start
+    if game.state==0 then
+        if btn(0) or btn(1) or btn(2) or btn(3) or btn(4) or btn(5) then
+            game.state=1
+        end
 
-    if(btnp(4)) then
-        add(game.bullets, bulletFactory(game.player.x,game.player.y,game.player.direction))
     end
+    if game.state==1 then
+        enemyGenerator()
+        if (btn(0)) then game.player:moveLeft() end
+        if (btn(1)) then game.player:moveRight() end
+        if (btn(2)) then game.player:moveTop() end
+        if (btn(3)) then game.player:moveDown() end
 
-    if(btnp(5)) then
-        add(game.enemies, enemyFactory(10,10,12,game.player.x,game.player.y))
+        if(btnp(4)) then
+            add(game.bullets, bulletFactory(game.player.x,game.player.y,game.player.direction))
+        end
+
+        if(btnp(5)) then
+            add(game.enemies, enemyFactory(10,10,12,game.player.x,game.player.y))
+        end
     end
 end
 
 function _draw()
  cls(0)
- game:drawPlayer()
- game:bulletCollitionCheck()
- game:bulletCleanUp()
- game:enemyCleanUp()
- game:moveBullets()
- game:moveEnemies()
- game:drawBullets()
- game:drawEnemies()
+    game:drawPlayer()
+ if game.state==1 then
+     -- game:drawPlayer()
+     game:bulletCollitionCheck()
+     game:bulletCleanUp()
+     game:enemyCleanUp()
+     game:moveBullets()
+     game:moveEnemies()
+     game:checkEnemyPlayerCollision()
+     game:drawBullets()
+     game:drawEnemies()
+     game.time+=1
+     print(game.time,0,0,0)
+ end
+
 end
 
-
+function enemyGenerator()
+    -- first 30 seconds
+    if game.time<900 then
+        if (game.time - 60) % 360 == 0 then
+            add(game.enemies, enemyFactory(127,64,12,game.player.x,game.player.y))
+            -- add(game.enemies, enemyFactory(flr(rnd(128)),flr(rnd(128)),12,game.player.x,game.player.y))
+        elseif (game.time - 150) % 360 == 0 then
+            add(game.enemies, enemyFactory(64,127,12,game.player.x,game.player.y))
+        elseif (game.time - 240) % 360 == 0 then
+            add(game.enemies, enemyFactory(0,64,12,game.player.x,game.player.y))
+        elseif (game.time - 330) % 360 == 0 then
+            add(game.enemies, enemyFactory(64,0,12,game.player.x,game.player.y))
+        end
+    end
+end
 
 function makeGame()
     game = {
+        time=0,
         totalKills=0,
         state=0,
         bullets = {},
@@ -145,6 +177,13 @@ function makeGame()
         drawEnemies=function(self)
             for e in all(self.enemies) do pset(e.x,e.y,e.color) end
         end,
+        checkEnemyPlayerCollision=function(self)
+            e=self.findEnemyByPosition(self,self.player.x,self.player.y)
+            if e!=nil then
+                -- endgame, or reduce weapons.
+                self.state=1
+            end
+        end
     }
 
     return game
