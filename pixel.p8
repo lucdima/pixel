@@ -5,6 +5,7 @@ __lua__
 
 function _init()
     game = makeGame()
+    sounds = makeSounds()
     -- endGameTimeCounter = 0
     cls()
     -- game.state=0
@@ -27,6 +28,7 @@ function _update()
         if (btn(3)) then game.player:moveDown() end
 
         if(btnp(4)) then
+            sounds:playLaser()
             add(game.bullets, bulletFactory(game.player.x,game.player.y,game.player.direction))
         end
 
@@ -74,7 +76,7 @@ function _draw()
          game:enemyCleanUp()
          game:moveBullets()
          game:moveEnemies()
-         game:checkEnemyPlayerCollision()
+         -- game:checkEnemyPlayerCollision()
          game:drawBullets()
          game:drawEnemies()
      elseif game.state==3 then
@@ -87,21 +89,48 @@ function _draw()
 
 end
 
+function makeSounds()
+    s = {
+        playLaser=function()
+            sfx(flr(rnd(3)))
+        end,
+        playEnemyDead=function()
+            sfx(3)
+        end,
+        playPlayerDead=function()
+            sfx(4)
+        end,
+        playCountEnemies=function()
+            sfx(5)
+        end,
+        playEndChord=function()
+            sfx(6)
+        end,
+    }
+
+    return s
+end
+
 function makeEndgameTimeCounter(maxTime)
     m = {
-        maxTime=maxTime,
+        maxTime=15,
         x=0,
         y=0,
         current=0,
+        playend=0,
         draw=function(self)
             if self.current<self.maxTime then
                 pset(self.x,self.y,7)
+                sounds:playCountEnemies()
                 self.x+=2
                 if self.x>127 then
                     self.x=0
                     self.y+=2
                 end
                 self.current+=1
+            elseif self.playend==0 then
+                sounds:playEndChord()
+                self.playend=1
             end
         end,
     }
@@ -122,6 +151,26 @@ function enemyGenerator()
         elseif (game.time - 330) % 360 == 0 then
             add(game.enemies, enemyFactory(64,0,12,game.player.x,game.player.y))
         end
+    -- elseif game.time>900 and game.time>1800 then
+    --     if (game.time - 60) % 360 == 0 then
+    --         -- left
+    --         add(game.enemies, enemyFactory(127,64,12,game.player.x,game.player.y))
+    --         add(game.enemies, enemyFactory(0,64,12,game.player.x,game.player.y))
+    --         -- add(game.enemies, enemyFactory(flr(rnd(128)),flr(rnd(128)),12,game.player.x,game.player.y))
+    --     elseif (game.time - 150) % 360 == 0 then
+    --         add(game.enemies, enemyFactory(64,127,12,game.player.x,game.player.y))
+    --         add(game.enemies, enemyFactory(64,0,12,game.player.x,game.player.y))
+    --     elseif (game.time - 240) % 360 == 0 then
+    --         add(game.enemies, enemyFactory(127,64,12,game.player.x,game.player.y))
+    --         add(game.enemies, enemyFactory(0,64,12,game.player.x,game.player.y))
+    --     elseif (game.time - 330) % 360 == 0 then
+    --         add(game.enemies, enemyFactory(64,0,12,game.player.x,game.player.y))
+    --         add(game.enemies, enemyFactory(64,0,12,game.player.x,game.player.y))
+    --     end
+    -- elseif game.time>1800 then
+    --     if (game.time) % 30 == 0 then
+    --         add(game.enemies, enemyFactory(flr(rnd(128)),flr(rnd(128)),12,game.player.x,game.player.y))
+    --     end
     end
 end
 
@@ -146,6 +195,7 @@ function makeGame()
                             b.hit=1
                             e.hit=1
                             self.totalKills+=1
+                            sounds:playEnemyDead()
                             break
                         end
                     end
@@ -157,6 +207,7 @@ function makeGame()
                             b.hit=1
                             e.hit=1
                             self.totalKills+=1
+                            sounds:playEnemyDead()
                             break
                         end
                     end
@@ -168,6 +219,7 @@ function makeGame()
                             b.hit=1
                             e.hit=1
                             self.totalKills+=1
+                            sounds:playEnemyDead()
                             break
                         end
                     end
@@ -179,6 +231,7 @@ function makeGame()
                             b.hit=1
                             e.hit=1
                             self.totalKills+=1
+                            sounds:playEnemyDead()
                             break
                         end
                     end
@@ -238,6 +291,7 @@ function makeGame()
         checkEnemyPlayerCollision=function(self)
             e=self.findEnemyByPosition(self,self.player.x,self.player.y)
             if e!=nil then
+                sounds:playPlayerDead()
                 -- endgame, or reduce weapons.
                 self.state=2
             end
@@ -341,4 +395,10 @@ __gfx__
 00077000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00700700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __sfx__
-0001000012050180501a0501c0501d0501d0501d0501c0501b0501a05017050160501505014050130501305013050000001c05000000000000000000000000000000000000000000000000000000000000000000
+000100002705025050230501f0501d0501a050170501405013050110500e0500c05009050070500405003050010500d2000b200092000820007200052000320002200012000c600106000f6000c6000960003600
+000100003305032050300502e0502c0502a050280502605023050210501d0501b050180501605014050110500e0500b0500805005050030500005000050000000000000000000000000000000000000000000000
+0001000029050270502505023050210501e0501c0501905015050110500e0500a0500505001050000500000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000100001f6501f65020650216502165021650226502265022650226502265021650206501f6501d650196501565013650106500b650096500665002650006500000000000000000000000000000000000000000
+00020000174501745016450164501545014450134501345011450104500e4500c4500b4500945007450054500345001450014500365005650096500b6500c6500d6500e6500e6500d6500b650076500565000650
+000100002805000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+001000002605026050260501d750260501f750260501e7502605026050260502605020000200001e0001d0001b000180001500012000120001a7001b7001c7001c7001d7001d7001d7001d7001d7001c7001b700
