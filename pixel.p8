@@ -7,21 +7,15 @@ function _init()
     game = makeGame()
     sounds = makeSounds()
     enemyGenerator = makeEnemyGenerator()
-    -- endGameTimeCounter = 0
-    cls()
-    -- game.state=0
-
+    cls(0)
 end
 
 function _update()
-    -- start
     if game.state==0 then
         if btn(0) or btn(1) or btn(2) or btn(3) or btn(4) or btn(5) then
             game.state=1
         end
-
-    end
-    if game.state==1 then
+    elseif game.state==1 then
         enemyGenerator:generate()
         if (btn(0)) then game.player:moveLeft() end
         if (btn(1)) then game.player:moveRight() end
@@ -31,10 +25,6 @@ function _update()
         if(btnp(4)) then
             sounds:playLaser()
             add(game.bullets, bulletFactory(game.player.x,game.player.y,game.player.direction))
-        end
-
-        if(btnp(5)) then
-            add(game.enemies, enemyFactory(10,10,12,game.player.x,game.player.y))
         end
     elseif game.state==2 then
          endGame = makeEndgameTimeCounter(game.totalKills)
@@ -50,7 +40,6 @@ function _update()
 end
 
 function _draw()
-
     -- wating to begin
     if game.state==0 then
         cls(0)
@@ -68,7 +57,6 @@ function _draw()
          game:drawBullets()
          game:drawEnemies()
          game.time+=1
-         -- print(game.time,0,0,7)
      -- endgame with enemies still heading for dead player
      elseif game.state==2 then
          cls(0)
@@ -77,21 +65,16 @@ function _draw()
          game:enemyCleanUp()
          game:moveBullets()
          game:moveEnemies()
-         -- game:checkEnemyPlayerCollision()
          game:drawBullets()
          game:drawEnemies()
      elseif game.state==3 then
-         -- count time (or enemies)
-         -- if endGameTimeCounter%2 == 0 then endGame:draw() end
+         -- count enemimes
          endGame:draw()
-         -- endGameTimeCounter+=1
      end
-
-
 end
 
 function makeSounds()
-    s = {
+    local s = {
         playLaser=function()
             sfx(flr(rnd(3)))
         end,
@@ -113,7 +96,7 @@ function makeSounds()
 end
 
 function makeEndgameTimeCounter(maxTime)
-    m = {
+    local m = {
         maxTime=maxTime,
         x=0,
         y=0,
@@ -121,7 +104,7 @@ function makeEndgameTimeCounter(maxTime)
         playend=0,
         draw=function(self)
             if self.current<self.maxTime then
-                pset(self.x,self.y,7)
+                pset(self.x,self.y,12)
                 sounds:playCountEnemies()
                 self.x+=2
                 if self.x>127 then
@@ -140,7 +123,7 @@ function makeEndgameTimeCounter(maxTime)
 end
 
 function makeEnemyGenerator()
-    eg = {
+    local eg = {
     level=0,
     generate=function(self)
         if game.time<300 then self.level = 0
@@ -203,7 +186,7 @@ function makeEnemyGenerator()
 end
 
 function makeGame()
-    game = {
+    local game = {
         time=0,
         totalKills=0,
         state=0,
@@ -286,7 +269,7 @@ function makeGame()
                 end
             end
         end,
-        moveBullets=function(self)
+        moveBullets=function(self) -- I dont like this logic...
             local i,j=1,1               --to properly support objects being deleted, can't use del() or deli()
             while(self.bullets[i]) do           --if we used a for loop, adding new objects in object updates would break
                 if self.bullets[i]:update() then
@@ -390,8 +373,8 @@ function bulletFactory(x,y,direction)
         return self.time > 0
     end,
     }
-    -- add(bullets,b)                 --now we can manage all bullets in a list
-    return b                    --and if some are special, we can adjust them a bit outside of this function
+
+    return b
 end
 
 function enemyFactory(x,y,color,tx,ty)
