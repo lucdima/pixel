@@ -5,6 +5,10 @@ __lua__
 
 function _init()
     game = makeGame()
+    -- endGameTimeCounter = 0
+    cls()
+    -- game.state=0
+
 end
 
 function _update()
@@ -29,26 +33,80 @@ function _update()
         if(btnp(5)) then
             add(game.enemies, enemyFactory(10,10,12,game.player.x,game.player.y))
         end
+    elseif game.state==2 then
+         endGame = makeEndgameTimeCounter(game.totalKills)
+        if(btnp(4)) then
+            cls()
+            game.state=3
+        end
+    elseif game.state==3 then
+        if(btnp(4)) then
+            _init()
+        end
     end
 end
 
 function _draw()
- cls(0)
-    game:drawPlayer()
- if game.state==1 then
-     -- game:drawPlayer()
-     game:bulletCollitionCheck()
-     game:bulletCleanUp()
-     game:enemyCleanUp()
-     game:moveBullets()
-     game:moveEnemies()
-     game:checkEnemyPlayerCollision()
-     game:drawBullets()
-     game:drawEnemies()
-     game.time+=1
-     print(game.time,0,0,0)
- end
 
+    -- wating to begin
+    if game.state==0 then
+        cls(0)
+        game:drawPlayer()
+    -- play
+    elseif game.state==1 then
+        cls(0)
+         game:drawPlayer()
+         game:bulletCollitionCheck()
+         game:bulletCleanUp()
+         game:enemyCleanUp()
+         game:moveBullets()
+         game:moveEnemies()
+         game:checkEnemyPlayerCollision()
+         game:drawBullets()
+         game:drawEnemies()
+         game.time+=1
+         -- print(game.time,0,0,7)
+     -- endgame with enemies still heading for dead player
+     elseif game.state==2 then
+         cls(0)
+         game:bulletCollitionCheck()
+         game:bulletCleanUp()
+         game:enemyCleanUp()
+         game:moveBullets()
+         game:moveEnemies()
+         game:checkEnemyPlayerCollision()
+         game:drawBullets()
+         game:drawEnemies()
+     elseif game.state==3 then
+         -- count time (or enemies)
+         -- if endGameTimeCounter%2 == 0 then endGame:draw() end
+         endGame:draw()
+         -- endGameTimeCounter+=1
+     end
+
+
+end
+
+function makeEndgameTimeCounter(maxTime)
+    m = {
+        maxTime=maxTime,
+        x=0,
+        y=0,
+        current=0,
+        draw=function(self)
+            if self.current<self.maxTime then
+                pset(self.x,self.y,7)
+                self.x+=2
+                if self.x>127 then
+                    self.x=0
+                    self.y+=2
+                end
+                self.current+=1
+            end
+        end,
+    }
+
+    return m
 end
 
 function enemyGenerator()
@@ -181,7 +239,7 @@ function makeGame()
             e=self.findEnemyByPosition(self,self.player.x,self.player.y)
             if e!=nil then
                 -- endgame, or reduce weapons.
-                self.state=1
+                self.state=2
             end
         end
     }
@@ -282,3 +340,5 @@ __gfx__
 00077000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00077000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00700700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+__sfx__
+0001000012050180501a0501c0501d0501d0501d0501c0501b0501a05017050160501505014050130501305013050000001c05000000000000000000000000000000000000000000000000000000000000000000
