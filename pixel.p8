@@ -6,6 +6,7 @@ __lua__
 function _init()
     game = makeGame()
     sounds = makeSounds()
+    enemyGenerator = makeEnemyGenerator()
     -- endGameTimeCounter = 0
     cls()
     -- game.state=0
@@ -21,7 +22,7 @@ function _update()
 
     end
     if game.state==1 then
-        enemyGenerator()
+        enemyGenerator:generate()
         if (btn(0)) then game.player:moveLeft() end
         if (btn(1)) then game.player:moveRight() end
         if (btn(2)) then game.player:moveTop() end
@@ -41,7 +42,7 @@ function _update()
             cls()
             game.state=3
         end
-    elseif game.state==3 then
+    elseif game.state==3 and endGame.playend == 1 then
         if(btnp(4)) then
             _init()
         end
@@ -113,7 +114,7 @@ end
 
 function makeEndgameTimeCounter(maxTime)
     m = {
-        maxTime=15,
+        maxTime=maxTime,
         x=0,
         y=0,
         current=0,
@@ -138,9 +139,25 @@ function makeEndgameTimeCounter(maxTime)
     return m
 end
 
-function enemyGenerator()
-    -- first 30 seconds
-    if game.time<900 then
+function makeEnemyGenerator()
+    eg = {
+    level=0,
+    generate=function(self)
+        if game.time<300 then self.level = 0
+        elseif game.time<600 then self.level = 1
+        elseif game.time<900 then self.level = 2
+        elseif game.time<1200 then self.level = 3
+        else self.level = 4
+        end
+
+        if self.level==0 then self:level0(self)
+        elseif self.level==1 then self:level1(self)
+        elseif self.level==2 then self:level2(self)
+        elseif self.level==3 then self:level3(self)
+        else self:level4(self)
+        end
+    end,
+    level0=function(self)
         if (game.time - 60) % 360 == 0 then
             add(game.enemies, enemyFactory(127,64,12,game.player.x,game.player.y))
             -- add(game.enemies, enemyFactory(flr(rnd(128)),flr(rnd(128)),12,game.player.x,game.player.y))
@@ -151,27 +168,38 @@ function enemyGenerator()
         elseif (game.time - 330) % 360 == 0 then
             add(game.enemies, enemyFactory(64,0,12,game.player.x,game.player.y))
         end
-    -- elseif game.time>900 and game.time>1800 then
-    --     if (game.time - 60) % 360 == 0 then
-    --         -- left
-    --         add(game.enemies, enemyFactory(127,64,12,game.player.x,game.player.y))
-    --         add(game.enemies, enemyFactory(0,64,12,game.player.x,game.player.y))
-    --         -- add(game.enemies, enemyFactory(flr(rnd(128)),flr(rnd(128)),12,game.player.x,game.player.y))
-    --     elseif (game.time - 150) % 360 == 0 then
-    --         add(game.enemies, enemyFactory(64,127,12,game.player.x,game.player.y))
-    --         add(game.enemies, enemyFactory(64,0,12,game.player.x,game.player.y))
-    --     elseif (game.time - 240) % 360 == 0 then
-    --         add(game.enemies, enemyFactory(127,64,12,game.player.x,game.player.y))
-    --         add(game.enemies, enemyFactory(0,64,12,game.player.x,game.player.y))
-    --     elseif (game.time - 330) % 360 == 0 then
-    --         add(game.enemies, enemyFactory(64,0,12,game.player.x,game.player.y))
-    --         add(game.enemies, enemyFactory(64,0,12,game.player.x,game.player.y))
-    --     end
-    -- elseif game.time>1800 then
-    --     if (game.time) % 30 == 0 then
-    --         add(game.enemies, enemyFactory(flr(rnd(128)),flr(rnd(128)),12,game.player.x,game.player.y))
-    --     end
-    end
+    end,
+
+    level1=function(self)
+        if ((game.time - 60) % 360 == 0) or ((game.time - 240) % 360 == 0) then
+            add(game.enemies, enemyFactory(127,64,12,game.player.x,game.player.y)) -- right
+            add(game.enemies, enemyFactory(0,64,12,game.player.x,game.player.y)) -- left
+            -- add(game.enemies, enemyFactory(flr(rnd(128)),flr(rnd(128)),12,game.player.x,game.player.y))
+        elseif ((game.time - 150) % 360 == 0) or ((game.time - 330) % 360 == 0) then
+            add(game.enemies, enemyFactory(64,127,12,game.player.x,game.player.y)) -- bottom
+            add(game.enemies, enemyFactory(64,0,12,game.player.x,game.player.y)) -- top
+        end
+    end,
+    level2=function(self)
+        if ((game.time) % 30 == 0) then
+            add(game.enemies, enemyFactory(flr(rnd(128)),flr(rnd(128)),12,game.player.x,game.player.y))
+        end
+    end,
+    level3=function(self)
+        if ((game.time) % 15 == 0) then
+            add(game.enemies, enemyFactory(flr(rnd(128)),flr(rnd(128)),12,game.player.x,game.player.y))
+        end
+    end,
+    level4=function(self)
+        if ((game.time) % 7 == 0) then
+            add(game.enemies, enemyFactory(flr(rnd(128)),flr(rnd(128)),12,game.player.x,game.player.y))
+        end
+    end,
+
+
+    }
+
+    return eg
 end
 
 function makeGame()
