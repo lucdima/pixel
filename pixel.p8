@@ -4,10 +4,12 @@ __lua__
 
 
 function _init()
+    config = makeConfig()
+
     game = makeGame()
     sounds = makeSounds()
     enemyGenerator = makeEnemyGenerator()
-    cls(0)
+    cls(config.backgroundColor)
 end
 
 function _update()
@@ -34,7 +36,7 @@ function _update()
          endGame = makeEndgameTimeCounter(game.totalKills)
         -- if(btnp(4) or btnp(5)) and game.endtime+60 < game.time then
             if game.endtime+60 < game.time then
-            cls()
+            cls(config.backgroundColor)
             game.state=3
         end
     elseif game.state==3 and endGame.playend == 1 then
@@ -47,11 +49,11 @@ end
 function _draw()
     -- wating to begin
     if game.state==0 then
-        cls(0)
+        cls(config.backgroundColor)
         game:drawPlayer()
     -- play
     elseif game.state==1 then
-        cls(0)
+        cls(config.backgroundColor)
          game:drawPlayer()
          game:bulletCollitionCheck()
          game:bulletCleanUp()
@@ -64,7 +66,7 @@ function _draw()
          game.time+=1
      -- endgame with enemies still heading for dead player
      elseif game.state==2 then
-         cls(0)
+         cls(config.backgroundColor)
          game:bulletCollitionCheck()
          game:bulletCleanUp()
          game:enemyCleanUp()
@@ -77,6 +79,30 @@ function _draw()
          -- count enemimes
          endGame:draw()
      end
+end
+
+function makeConfig()
+    local config = {
+        backgroundColor = 0,
+        playerColor = 7,
+        playerStartingPositionX = 64,
+        playerStartingPositionY = 64,
+        playerSpeed = 2,
+
+        bulletColor = 12,
+        bulletSpeed = 5,
+        bulletDuration  = 60, -- in frames (this is 2 seconds)
+
+        enemyColor = 10,
+        enemySpeed = 1,
+
+        level0Frames = 300,
+        level1Frames = 600, -- ten seconds
+        level2Frames = 900,
+        level3Frames = 1200,
+    }
+
+    return config
 end
 
 function makeSounds()
@@ -101,16 +127,16 @@ function makeSounds()
     return s
 end
 
-function makeEndgameTimeCounter(maxTime)
+function makeEndgameTimeCounter(killCount)
     local m = {
-        maxTime=maxTime,
+        killCount=killCount,
         x=0,
         y=0,
         current=0,
         playend=0,
         draw=function(self)
-            if self.current<self.maxTime then
-                pset(self.x,self.y,12)
+            if self.current<self.killCount then
+                pset(self.x,self.y,config.enemyColor)
                 sounds:playCountEnemies()
                 self.x+=2
                 if self.x>127 then
@@ -132,10 +158,10 @@ function makeEnemyGenerator()
     local eg = {
     level=0,
     generate=function(self)
-        if game.time<300 then self.level = 0
-        elseif game.time<600 then self.level = 1
-        elseif game.time<900 then self.level = 2
-        elseif game.time<1200 then self.level = 3
+        if game.time<config.level0Frames then self.level = 0
+        elseif game.time<config.level1Frames then self.level = 1
+        elseif game.time<config.level2Frames then self.level = 2
+        elseif game.time<config.level3Frames then self.level = 3
         else self.level = 4
         end
 
@@ -148,40 +174,38 @@ function makeEnemyGenerator()
     end,
     level0=function(self)
         if (game.time - 60) % 360 == 0 then
-            add(game.enemies, enemyFactory(127,64,12,game.player.x,game.player.y))
-            -- add(game.enemies, enemyFactory(flr(rnd(128)),flr(rnd(128)),12,game.player.x,game.player.y))
+            add(game.enemies, enemyFactory(127,64,config.enemyColor,game.player.x,game.player.y,config.enemySpeed))
         elseif (game.time - 150) % 360 == 0 then
-            add(game.enemies, enemyFactory(64,127,12,game.player.x,game.player.y))
+            add(game.enemies, enemyFactory(64,127,config.enemyColor,game.player.x,game.player.y,config.enemySpeed))
         elseif (game.time - 240) % 360 == 0 then
-            add(game.enemies, enemyFactory(0,64,12,game.player.x,game.player.y))
+            add(game.enemies, enemyFactory(0,64,config.enemyColor,game.player.x,game.player.y,config.enemySpeed))
         elseif (game.time - 330) % 360 == 0 then
-            add(game.enemies, enemyFactory(64,0,12,game.player.x,game.player.y))
+            add(game.enemies, enemyFactory(64,0,config.enemyColor,game.player.x,game.player.y,config.enemySpeed))
         end
     end,
 
     level1=function(self)
         if ((game.time - 60) % 360 == 0) or ((game.time - 240) % 360 == 0) then
-            add(game.enemies, enemyFactory(127,64,12,game.player.x,game.player.y)) -- right
-            add(game.enemies, enemyFactory(0,64,12,game.player.x,game.player.y)) -- left
-            -- add(game.enemies, enemyFactory(flr(rnd(128)),flr(rnd(128)),12,game.player.x,game.player.y))
+            add(game.enemies, enemyFactory(127,64,config.enemyColor,game.player.x,game.player.y,config.enemySpeed)) -- right
+            add(game.enemies, enemyFactory(0,64,config.enemyColor,game.player.x,game.player.y,config.enemySpeed)) -- left
         elseif ((game.time - 150) % 360 == 0) or ((game.time - 330) % 360 == 0) then
-            add(game.enemies, enemyFactory(64,127,12,game.player.x,game.player.y)) -- bottom
-            add(game.enemies, enemyFactory(64,0,12,game.player.x,game.player.y)) -- top
+            add(game.enemies, enemyFactory(64,127,config.enemyColor,game.player.x,game.player.y,config.enemySpeed)) -- bottom
+            add(game.enemies, enemyFactory(64,0,config.enemyColor,game.player.x,game.player.y,config.enemySpeed)) -- top
         end
     end,
     level2=function(self)
         if ((game.time) % 30 == 0) then
-            add(game.enemies, enemyFactory(flr(rnd(128)),flr(rnd(128)),12,game.player.x,game.player.y))
+            add(game.enemies, enemyFactory(flr(rnd(128)),flr(rnd(128)),config.enemyColor,game.player.x,game.player.y,config.enemySpeed))
         end
     end,
     level3=function(self)
         if ((game.time) % 20 == 0) then
-            add(game.enemies, enemyFactory(flr(rnd(128)),flr(rnd(128)),12,game.player.x,game.player.y))
+            add(game.enemies, enemyFactory(flr(rnd(128)),flr(rnd(128)),config.enemyColor,game.player.x,game.player.y,config.enemySpeed))
         end
     end,
     level4=function(self)
         if ((game.time) % 10 == 0) then
-            add(game.enemies, enemyFactory(flr(rnd(128)),flr(rnd(128)),12,game.player.x,game.player.y))
+            add(game.enemies, enemyFactory(flr(rnd(128)),flr(rnd(128)),config.enemyColor,game.player.x,game.player.y,config.enemySpeed))
         end
     end,
 
@@ -199,7 +223,7 @@ function makeGame()
         state=0,
         bullets = {},
         enemies = {},
-        player = playerFactory(64, 64, 7),
+        player = playerFactory(64, 64, config.playerColor),
         drawPlayer=function(self)
             pset(self.player.x,self.player.y,self.player.color)
         end,
@@ -321,13 +345,13 @@ function makeGame()
 end
 
 
-function playerFactory(x, y, color)
+function playerFactory(x, y)
     local player = {
-        x=x,
-        y=y,
-        color=color,
+        x=config.playerStartingPositionX,
+        y=config.playerStartingPositionX,
+        color=config.playerColor,
         direction=1,
-        speed=2,
+        speed=config.playerSpeed,
         moveTop=function(self)
             self.y-=self.speed
             self.direction = 2
@@ -356,7 +380,7 @@ end
 function bulletFactory(x,y,direction)
     local dx=0
     local dy=0
-    local speed=5
+    local speed=config.bulletSpeed
     if direction==0 then
         dx=-1*speed
     elseif direction==1 then
@@ -368,8 +392,8 @@ function bulletFactory(x,y,direction)
     end
     local b = {                 --only use the b table inside this function, it's "local" to it
     x=x,y=y,dx=dx,dy=dy,       --the x=x means let b.x = the value stored in newbullet()'s x variable
-    time=60,                   --this is how long a bullet will last before disappearing
-    color=8,
+    time=config.bulletDuration,                   --this is how long a bullet will last before disappearing
+    color=config.bulletColor,
     direction=direction,
     hit=0,
     speed=speed,
@@ -385,12 +409,12 @@ function bulletFactory(x,y,direction)
     return b
 end
 
-function enemyFactory(x,y,color,tx,ty)
+function enemyFactory(x,y,color,tx,ty,speed)
     local enemy = {
         x=x,y=y,
         tx=tx,ty=ty,
         color=color,
-        speed=1,
+        speed=speed,
         hit=0,
         update=function(self)
             if self.x>self.tx then self.x-=self.speed
