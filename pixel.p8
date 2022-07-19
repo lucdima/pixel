@@ -12,8 +12,12 @@ end
 
 function _update()
     if game.state==0 then
-        if btn(0) or btn(1) or btn(2) or btn(3) or btn(4) or btn(5) then
+        if btn(0) or btn(1) or btn(2) or btn(3) or btn(4) then
             game.state=1
+        end
+        if  btn(5) then
+            game.state=1
+            game.time=600
         end
     elseif game.state==1 then
         enemyGenerator:generate()
@@ -28,12 +32,13 @@ function _update()
         end
     elseif game.state==2 then
          endGame = makeEndgameTimeCounter(game.totalKills)
-        if(btnp(4)) then
+        -- if(btnp(4) or btnp(5)) and game.endtime+60 < game.time then
+            if game.endtime+60 < game.time then
             cls()
             game.state=3
         end
     elseif game.state==3 and endGame.playend == 1 then
-        if(btnp(4)) then
+        if(btnp(4) or btnp(5)) then
             _init()
         end
     end
@@ -67,6 +72,7 @@ function _draw()
          game:moveEnemies()
          game:drawBullets()
          game:drawEnemies()
+         game.time+=1
      elseif game.state==3 then
          -- count enemimes
          endGame:draw()
@@ -169,12 +175,12 @@ function makeEnemyGenerator()
         end
     end,
     level3=function(self)
-        if ((game.time) % 15 == 0) then
+        if ((game.time) % 20 == 0) then
             add(game.enemies, enemyFactory(flr(rnd(128)),flr(rnd(128)),12,game.player.x,game.player.y))
         end
     end,
     level4=function(self)
-        if ((game.time) % 7 == 0) then
+        if ((game.time) % 10 == 0) then
             add(game.enemies, enemyFactory(flr(rnd(128)),flr(rnd(128)),12,game.player.x,game.player.y))
         end
     end,
@@ -188,6 +194,7 @@ end
 function makeGame()
     local game = {
         time=0,
+        endtime=0,
         totalKills=0,
         state=0,
         bullets = {},
@@ -305,6 +312,7 @@ function makeGame()
                 sounds:playPlayerDead()
                 -- endgame, or reduce weapons.
                 self.state=2
+                self.endtime=self.time
             end
         end
     }
