@@ -100,11 +100,12 @@ function makeConfig()
 
         enemyColor = 10,
         enemySpeed = 1,
+        minEnemySpawnDistance = 50,
 
-        level0Frames = 300,
-        level1Frames = 600, -- ten seconds
-        level2Frames = 900,
-        level3Frames = 1200,
+        level0Frames = 0,
+        level1Frames = 0, -- ten seconds
+        level2Frames = 300,
+        level3Frames = 600,
     }
 
     return config
@@ -145,6 +146,18 @@ function makeShowDeadCount()
                     y+=2
                 end
             end
+
+            x = 0
+            y = 127
+            for i=1,count(game.enemies) do
+                pset(x,y,config.enemyColor)
+                x+=2
+                if x>127 then
+                    x=0
+                    y-=2
+                end
+            end
+
         end,
     }
 
@@ -219,21 +232,33 @@ function makeEnemyGenerator()
     end,
     level2=function(self)
         if ((game.time) % 30 == 0) then
-            add(game.enemies, enemyFactory(flr(rnd(128)),flr(rnd(128)),config.enemyColor,game.player.x,game.player.y,config.enemySpeed))
+            randomCoordinates = self:getRandomCoordinates()
+            add(game.enemies, enemyFactory(randomCoordinates.x,randomCoordinates.y,config.enemyColor,game.player.x,game.player.y,config.enemySpeed))
         end
     end,
     level3=function(self)
         if ((game.time) % 20 == 0) then
-            add(game.enemies, enemyFactory(flr(rnd(128)),flr(rnd(128)),config.enemyColor,game.player.x,game.player.y,config.enemySpeed))
+            randomCoordinates = self:getRandomCoordinates()
+            add(game.enemies, enemyFactory(randomCoordinates.x,randomCoordinates.y,config.enemyColor,game.player.x,game.player.y,config.enemySpeed))
         end
     end,
     level4=function(self)
         if ((game.time) % 10 == 0) then
-            add(game.enemies, enemyFactory(flr(rnd(128)),flr(rnd(128)),config.enemyColor,game.player.x,game.player.y,config.enemySpeed))
+            randomCoordinates = self:getRandomCoordinates()
+            add(game.enemies, enemyFactory(randomCoordinates.x,randomCoordinates.y,config.enemyColor,game.player.x,game.player.y,config.enemySpeed))
         end
     end,
-
-
+    getRandomCoordinates=function()
+        local distance = 0
+        local xCandidate = 0
+        local yCandidate = 0
+        repeat
+            xCandidate = flr(rnd(128))
+            yCandidate = flr(rnd(128))
+            distance = abs(game.player.x - xCandidate) + abs(game.player.y - yCandidate)
+        until distance>config.minEnemySpawnDistance
+        return {x=xCandidate, y=yCandidate}
+    end,
     }
 
     return eg
