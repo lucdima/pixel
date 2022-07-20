@@ -9,6 +9,7 @@ function _init()
     game = makeGame()
     sounds = makeSounds()
     enemyGenerator = makeEnemyGenerator()
+    showDeadCount = makeShowDeadCount()
     cls(config.backgroundColor)
 end
 
@@ -63,6 +64,7 @@ function _draw()
          game:checkEnemyPlayerCollision()
          game:drawBullets()
          game:drawEnemies()
+         showDeadCount:draw()
          game.time+=1
      -- endgame with enemies still heading for dead player
      elseif game.state==2 then
@@ -74,6 +76,9 @@ function _draw()
          game:moveEnemies()
          game:drawBullets()
          game:drawEnemies()
+
+         showDeadCount:draw()
+
          game.time+=1
      elseif game.state==3 then
          -- count enemimes
@@ -125,6 +130,25 @@ function makeSounds()
     }
 
     return s
+end
+
+function makeShowDeadCount()
+    local m = {
+        draw=function(self)
+            local x = 0
+            local y = 0
+            for i=1,game.totalKills do
+                pset(x,y,config.enemyColor)
+                x+=2
+                if x>127 then
+                    x=0
+                    y+=2
+                end
+            end
+        end,
+    }
+
+    return m
 end
 
 function makeEndgameTimeCounter(killCount)
